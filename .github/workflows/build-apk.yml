@@ -1,10 +1,6 @@
 name: Build Koci Arcade APK
 
-"on":
-workflow_dispatch:
-push:
-branches:
-- main
+on: [push, workflow_dispatch]
 
 permissions:
 contents: read
@@ -26,20 +22,18 @@ steps:
   - name: Set up Android SDK
     uses: android-actions/setup-android@v3
 
-  - name: Install Android SDK packages
-    run: |
-      sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
   - name: Accept Android SDK licenses
     run: yes | sdkmanager --licenses
 
-  - name: Check project files
+  - name: Install Android SDK packages
+    run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+  - name: Check Gradle wrapper
     run: |
       ls -la
-      ls -la app
       test -f gradlew
 
-  - name: Build debug APK
+  - name: Build APK
     run: |
       chmod +x gradlew
       ./gradlew --no-daemon assembleDebug
@@ -50,4 +44,3 @@ steps:
       name: Koci-Arcade-APK
       path: app/build/outputs/apk/debug/app-debug.apk
       if-no-files-found: error
-      retention-days: 7
