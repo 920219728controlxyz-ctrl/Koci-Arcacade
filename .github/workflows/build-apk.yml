@@ -38,21 +38,13 @@ steps:
     shell: bash
     run: |
       set -euo pipefail
-
-      SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" \
-        -type f -name sdkmanager \
-        | sort -V | tail -n 1)"
-
+      SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
       if [ -z "$SDKMANAGER" ]; then
-        echo "ERROR: sdkmanager not found."
+        echo "ERROR: sdkmanager not found"
         exit 1
       fi
-
-      yes | "$SDKMANAGER" \
-        --sdk_root="$ANDROID_HOME" --licenses || true
-
-      "$SDKMANAGER" \
-        --sdk_root="$ANDROID_HOME" \
+      yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
+      "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
         "platform-tools" \
         "platforms;android-35" \
         "build-tools;35.0.0"
