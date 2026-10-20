@@ -1,4 +1,5 @@
-name: Build Filemon Gry APK
+
+name: Build Koci Arcacade APK
 
 on:
   push:
@@ -11,6 +12,7 @@ permissions:
 
 jobs:
   build:
+    name: Build Filemon Gry
     runs-on: ubuntu-24.04
 
     steps:
@@ -22,13 +24,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Accept Android SDK licenses
         run: |
-          yes | sdkmanager --licenses
+          yes | sdkmanager --licenses || true
 
       - name: Install Android SDK packages
         run: |
@@ -37,15 +40,23 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Check Gradle wrapper
+      - name: Check project files
         run: |
+          echo "Checking Android project..."
           ls -la
           test -f gradlew
+          test -f settings.gradle.kts
+          test -f app/build.gradle.kts
 
       - name: Build APK
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
+
+      - name: Verify APK
+        run: |
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -53,3 +64,5 @@ jobs:
           name: Filemon-Gry-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 7
+
