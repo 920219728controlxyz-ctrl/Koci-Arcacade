@@ -1,21 +1,27 @@
-import org.gradle.api.tasks.compile.JavaCompile
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-id("com.android.application") version "8.7.3" apply false
-id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+id("com.android.application")
+id("org.jetbrains.kotlin.android")
 }
 
-subprojects {
-tasks.withType<JavaCompile>().configureEach {
-sourceCompatibility = "17"
-targetCompatibility = "17"
+android {
+namespace = "com.kociarcade"
+compileSdk = 35
+
+defaultConfig {
+    applicationId = "com.kociarcade"
+    minSdk = 23
+    targetSdk = 35
+    versionCode = 1
+    versionName = "1.0"
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+kotlinOptions {
+    jvmTarget = "1.8"
 }
 
 }
