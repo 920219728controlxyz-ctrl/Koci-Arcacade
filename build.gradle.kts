@@ -1,27 +1,87 @@
-plugins {
-id("com.android.application")
-id("org.jetbrains.kotlin.android")
-}
+name: Build Filemon Gry
 
-android {
-namespace = "com.kociarcade"
-compileSdk = 35
+on:
+push:
+branches:
+- main
+workflow_dispatch:
 
-defaultConfig {
-    applicationId = "com.kociarcade"
-    minSdk = 23
-    targetSdk = 35
-    versionCode = 1
-    versionName = "1.0"
-}
+permissions:
+contents: read
 
-compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+jobs:
+build:
+name: Build Filemon Gry
+runs-on: ubuntu-latest
+timeout-minutes: 30
 
-kotlinOptions {
-    jvmTarget = "17"
-}
+env:
+  ANDROID_HOME: /usr/local/lib/android/sdk
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
-}
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+
+  - name: Set up Java 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
+
+  - name: Set up Gradle 8.9
+    uses: gradle/actions/setup-gradle@v4
+    with:
+      gradle-version: '8.9'
+
+  - name: Install Android SDK packages
+    shell: bash
+    run: |
+      set -euo pipefail
+
+      SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" \
+        -type f -name sdkmanager \
+        | sort -V | tail -n 1)"
+
+      if [ -z "$SDKMANAGER" ]; then
+        echo "ERROR: sdkmanager not found."
+        exit 1
+      fi
+
+      yes | "$SDKMANAGER" \
+        --sdk_root="$ANDROID_HOME" --licenses || true
+
+      "$SDKMANAGER" \
+        --sdk_root="$ANDROID_HOME" \
+        "platform-tools" \
+        "platforms;android-35" \
+        "build-tools;35.0.0"
+
+  - name: Check project files
+    shell: bash
+    run: |
+      set -euo pipefail
+      test -f settings.gradle.kts
+      test -f build.gradle.kts
+      test -f app/build.gradle.kts
+      test -f app/src/main/AndroidManifest.xml
+      test -f app/src/main/java/com/kociarcade/MainActivity.kt
+
+  - name: Build APK
+    run: gradle --no-daemon :app:assembleDebug
+
+  - name: Verify APK
+    shell: bash
+    run: |
+      set -euo pipefail
+      APK="app/build/outputs/apk/debug/app-debug.apk"
+      test -s "$APK"
+      ls -lh "$APK"
+
+  - name: Upload Filemon Gry APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Filemon-Gry-APK
+      path: app/build/outputs/apk/debug/app-debug.apk
+      if-no-files-found: error
+      retention-days: 14
