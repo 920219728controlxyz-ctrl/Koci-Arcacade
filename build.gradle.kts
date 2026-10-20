@@ -24,3 +24,15 @@ android {
         jvmTarget = "17"
     }
 }
+
+tasks.configureEach {
+    if (name.startsWith("compile") && name.endsWith("JavaWithJavac")) {
+        extensions.findByName("options")?.let { options ->
+            options.javaClass.methods
+                .firstOrNull {
+                    it.name == "setSourceCompatibility" &&
+                    it.parameterCount == 1
+                }
+        }
+    }
+}
