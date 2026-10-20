@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.compile.JavaCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
 id("com.android.application")
@@ -31,4 +32,10 @@ kotlinOptions {
 tasks.withType<JavaCompile>().configureEach {
 sourceCompatibility = "17"
 targetCompatibility = "17"
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+kotlinOptions {
+jvmTarget = "17"
+}
 }
