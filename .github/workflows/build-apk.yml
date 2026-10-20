@@ -1,5 +1,5 @@
 
-name: Build Koci Arcacade APK
+name: Build Filemon Gry
 
 on:
   push:
@@ -13,81 +13,78 @@ permissions:
 jobs:
   build:
     name: Build Filemon Gry
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     env:
-      ANDROID_HOME: /home/runner/.android-sdk
-      ANDROID_SDK_ROOT: /home/runner/.android-sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
-      - name: Install Android command-line tools
-        run: |
-          set -e
-
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-
-          curl -fL \
-            "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" \
-            -o "$RUNNER_TEMP/android-tools.zip"
-
-          mkdir -p "$RUNNER_TEMP/android-tools"
-
-          unzip -q "$RUNNER_TEMP/android-tools.zip" \
-            -d "$RUNNER_TEMP/android-tools"
-
-          mv "$RUNNER_TEMP/android-tools/cmdline-tools" \
-            "$ANDROID_HOME/cmdline-tools/latest"
-
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            --version
-
-      - name: Accept Android SDK licenses
-        run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            --sdk_root="$ANDROID_HOME" --licenses || true
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Install Android SDK packages
+        shell: bash
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+          set -euo pipefail
+
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" \
+            -type f -name sdkmanager \
+            | sort -V | tail -n 1)"
+
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: Android SDK sdkmanager not found."
+            exit 1
+          fi
+
+          yes | "$SDKMANAGER" \
+            --sdk_root="$ANDROID_HOME" --licenses \
+            || true
+
+          "$SDKMANAGER" \
             --sdk_root="$ANDROID_HOME" \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Check project files
+      - name: Check project configuration
+        shell: bash
         run: |
-          test -f gradlew
+          set -euo pipefail
           test -f settings.gradle.kts
+          test -f build.gradle.kts
           test -f app/build.gradle.kts
+          test -f app/src/main/AndroidManifest.xml
+          echo "Project files found."
 
       - name: Build APK
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+        run: gradle --no-daemon :app:assembleDebug
 
       - name: Verify APK
+        shell: bash
         run: |
-          test -f app/build/outputs/apk/debug/app-debug.apk
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          ls -lh "$APK"
 
-      - name: Upload APK
+      - name: Upload Filemon Gry APK
         uses: actions/upload-artifact@v4
         with:
           name: Filemon-Gry-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
 
